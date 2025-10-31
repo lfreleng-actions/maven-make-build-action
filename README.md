@@ -25,6 +25,7 @@ steps:
     uses: lfreleng-actions/maven-make-build-action@main
     with:
       jdk-version: "17"
+      distribution: "temurin"
       mvn-version: "3.8.2"
       make-targets: "clean compile test"
       run-jacoco: "true"
@@ -36,22 +37,23 @@ steps:
 
 <!-- markdownlint-disable MD013 -->
 
-| Name          | Required | Default | Description                             |
-| ------------- | -------- | ------- | --------------------------------------- |
-| path_prefix   | False    | "."     | Directory location containing project   |
-|               |          |         | code                                    |
-| jdk-version   | False    | "17"    | OpenJDK version to set up               |
-| mvn-version   | False    | "3.8.2" | Maven version to set up                 |
-| make-targets  | False    | "all"   | Targets for the make command (e.g.,     |
-|               |          |         | "clean compile test")                   |
-| env-vars      | False    | "{}"    | Pass GitHub variables as environment    |
-|               |          |         | variables via `toJSON(vars)` or         |
-|               |          |         | specific variables in JSON              |
-| env-secrets   | False    | "{}"    | Pass GitHub secrets as environment      |
-|               |          |         | variables via `toJSON(secrets)` or      |
-|               |          |         | specific secrets in JSON                |
-| run-jacoco    | False    | "true"  | Boolean defining whether JaCoCo         |
-|               |          |         | coverage reporting runs                 |
+| Name          | Required | Default   | Description                             |
+| ------------- | -------- | --------- | --------------------------------------- |
+| path_prefix   | False    | "."       | Directory location containing project   |
+|               |          |           | code                                    |
+| jdk-version   | False    | "17"      | OpenJDK version to set up               |
+| distribution  | False    | "temurin" | OpenJDK distribution                   |
+| mvn-version   | False    | "3.8.2"   | Maven version to set up                 |
+| make-targets  | False    | "all"     | Targets for the make command (e.g.,     |
+|               |          |           | "clean compile test")                   |
+| env-vars      | False    | "{}"      | Pass GitHub variables as environment    |
+|               |          |           | variables via `toJSON(vars)` or         |
+|               |          |           | specific variables in JSON              |
+| env-secrets   | False    | "{}"      | Pass GitHub secrets as environment      |
+|               |          |           | variables via `toJSON(secrets)` or      |
+|               |          |           | specific secrets in JSON                |
+| run-jacoco    | False    | "true"    | Boolean defining whether JaCoCo         |
+|               |          |           | coverage reporting runs                 |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -70,8 +72,8 @@ artifacts:
 The action performs the following steps:
 
 1. **Environment Setup**: Validates the project directory path
-2. **JDK Setup**: Installs the specified OpenJDK version using Temurin
-   distribution
+2. **JDK Setup**: Installs the specified OpenJDK version using the specified
+   distribution (defaults to Temurin)
 3. **Maven Setup**: Installs the specified Maven version
 4. **Environment Variables**: Exports custom GitHub variables as environment
    variables
