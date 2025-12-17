@@ -37,23 +37,23 @@ steps:
 
 <!-- markdownlint-disable MD013 -->
 
-| Name          | Required | Default   | Description                             |
-| ------------- | -------- | --------- | --------------------------------------- |
-| path_prefix   | False    | "."       | Directory location containing project   |
-|               |          |           | code                                    |
-| jdk-version   | False    | "17"      | OpenJDK version to set up               |
-| distribution  | False    | "temurin" | OpenJDK distribution                   |
-| mvn-version   | False    | "3.8.2"   | Maven version to set up                 |
-| make-targets  | False    | "all"     | Targets for the make command (e.g.,     |
-|               |          |           | "clean compile test")                   |
-| env-vars      | False    | "{}"      | Pass GitHub variables as environment    |
-|               |          |           | variables via `toJSON(vars)` or         |
-|               |          |           | specific variables in JSON              |
-| env-secrets   | False    | "{}"      | Pass GitHub secrets as environment      |
-|               |          |           | variables via `toJSON(secrets)` or      |
-|               |          |           | specific secrets in JSON                |
-| run-jacoco    | False    | "true"    | Boolean defining whether JaCoCo         |
-|               |          |           | coverage reporting runs                 |
+| Name         | Required | Default   | Description                           |
+| ------------ | -------- | --------- | ------------------------------------- |
+| path_prefix  | False    | "."       | Directory location containing project |
+|              |          |           | code                                  |
+| jdk-version  | False    | "17"      | OpenJDK version to set up             |
+| distribution | False    | "temurin" | OpenJDK distribution                  |
+| mvn-version  | False    | "3.8.2"   | Maven version to set up               |
+| make-targets | False    | "all"     | Targets for the make command (e.g.,   |
+|              |          |           | "clean compile test")                 |
+| env-vars     | False    | "{}"      | Pass GitHub variables as environment  |
+|              |          |           | variables via `toJSON(vars)` or       |
+|              |          |           | specific variables in JSON            |
+| env-secrets  | False    | "{}"      | Pass GitHub secrets as environment    |
+|              |          |           | variables via `toJSON(secrets)` or    |
+|              |          |           | specific secrets in JSON              |
+| run-jacoco   | False    | "true"    | Boolean defining whether JaCoCo       |
+|              |          |           | coverage reporting runs               |
 
 <!-- markdownlint-enable MD013 -->
 
