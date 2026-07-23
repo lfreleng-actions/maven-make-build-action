@@ -11,10 +11,15 @@ inputs:
     description: 'Directory location containing project code'
     required: false
     default: '.'
-  jdk-version:
+  java-version:
     description: "OpenJDK version"
     required: false
     default: "17"
+  jdk-version:
+    # yamllint disable-line rule:line-length
+    description: "Deprecated alias for java-version; retained for backward compatibility"
+    required: false
+    default: ""
   distribution:
     description: "OpenJDK distribution"
     required: false
@@ -77,12 +82,39 @@ runs:
           echo 'Error: invalid path/prefix to project directory ❌'; exit 1
         fi
 
+    - name: 'Resolve Java version'
+      id: java
+      shell: bash
+      env:
+        JAVA_VERSION: ${{ inputs.java-version }}
+        JDK_VERSION_ALIAS: ${{ inputs.jdk-version }}
+      run: |
+        # Resolve the effective Java version. The 'jdk-version' input is a
+        # deprecated alias retained for backward compatibility; when set it
+        # takes precedence over 'java-version' and emits a deprecation
+        # warning so existing callers keep working while they migrate.
+        if [ -n "$JDK_VERSION_ALIAS" ]; then
+          echo "::warning::'jdk-version' is deprecated; use 'java-version'"
+          version="$JDK_VERSION_ALIAS"
+        else
+          version="$JAVA_VERSION"
+        fi
+        # A version string never spans multiple lines; strip any CR/LF so
+        # a crafted value cannot inject extra GITHUB_OUTPUT entries.
+        version=$(printf '%s' "$version" | tr -d '\r\n')
+        if [ -z "$version" ]; then
+          echo "Error: no Java version supplied; set java-version ❌"
+          exit 1
+        fi
+        printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+        echo "Resolved Java version: ${version}"
+
     - name: Setup JDK
       id: setup-jdk
       # yamllint disable-line rule:line-length
       uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
       with:
-        java-version: ${{ inputs.jdk-version }}
+        java-version: ${{ steps.java.outputs.version }}
         distribution: ${{ inputs.distribution }}
 
     - name: Setup Maven
@@ -90,7 +122,7 @@ runs:
       # yamllint disable-line rule:line-length
       uses: s4u/setup-maven-action@ba34de01b7f4ba2ab8e2860df8993a29f4477056 # v1.20.0
       with:
-        java-version: ${{ inputs.jdk-version }}
+        java-version: ${{ steps.java.outputs.version }}
         maven-version: ${{ inputs.mvn-version }}
         checkout-enabled: false
 
@@ -142,7 +174,7 @@ runs:
       id: summary
       shell: bash
       env:
-        JDK_VERSION: ${{ inputs.jdk-version }}
+        JDK_VERSION: ${{ steps.java.outputs.version }}
         MVN_VERSION: ${{ inputs.mvn-version }}
         MAKE_TARGETS: ${{ inputs.make-targets }}
         RUN_JACOCO: ${{ inputs.run-jacoco }}

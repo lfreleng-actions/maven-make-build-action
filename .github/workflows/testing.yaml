@@ -44,7 +44,7 @@ jobs:
       - name: "Running local action: ${{ github.repository }}"
         uses: ./
         with:
-          jdk-version: '21'
+          java-version: '21'
           mvn-version: '3.9.5'
           make-targets: 'build'
           path_prefix: 'oam-oam-controller'

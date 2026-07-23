@@ -24,7 +24,7 @@ steps:
     id: maven-make-build
     uses: lfreleng-actions/maven-make-build-action@main
     with:
-      jdk-version: "17"
+      java-version: "17"
       distribution: "temurin"
       mvn-version: "3.8.2"
       make-targets: "clean compile test"
@@ -41,7 +41,8 @@ steps:
 | --------------- | -------- | --------- | ------------------------------------- |
 | path_prefix     | False    | "."       | Directory location containing project |
 |                 |          |           | code                                  |
-| jdk-version     | False    | "17"      | OpenJDK version to set up             |
+| java-version    | False    | "17"      | OpenJDK version to set up             |
+| jdk-version     | False    | ""        | Deprecated alias for java-version     |
 | distribution    | False    | "temurin" | OpenJDK distribution                  |
 | mvn-version     | False    | "3.8.2"   | Maven version to set up               |
 | make-targets    | False    | "all"     | Targets for the make command (e.g.,   |
