@@ -41,6 +41,26 @@ inputs:
     description: "Boolean defining whether Jacoco should be run"
     required: false
     default: "true"
+  artifact-upload:
+    description: "Upload the JaCoCo badges directory as a build artifact"
+    required: false
+    default: "true"
+  artifact-name:
+    description: "Uploaded artifact name (default: maven-make-<job>)"
+    required: false
+    default: ""
+
+outputs:
+  coverage:
+    description: "JaCoCo line coverage % (empty when JaCoCo skipped)"
+    value: ${{ steps.summary.outputs.coverage }}
+  branch_coverage:
+    # yamllint disable-line rule:line-length
+    description: "JaCoCo branch coverage percentage (empty when JaCoCo did not run)"
+    value: ${{ steps.summary.outputs.branch_coverage }}
+  artifact_name:
+    description: "Uploaded build artifact name (empty when disabled)"
+    value: ${{ steps.summary.outputs.artifact_name }}
 
 runs:
   using: "composite"
@@ -108,7 +128,8 @@ runs:
     # yamllint enable rule:line-length
     - name: Generate JaCoCo Badge
       id: jacoco
-      if: ${{ !env.ACT && inputs.run-jacoco }} # skip during local testing
+      # skip during local testing
+      if: ${{ !env.ACT && inputs.run-jacoco == 'true' }}
       # yamllint disable-line rule:line-length
       uses: cicirello/jacoco-badge-generator@72266185b7ee48a6fd74eaf0238395cc8b14fef8 # v2.12.1
       with:
@@ -117,10 +138,76 @@ runs:
         generate-summary: true
         on-missing-report: quiet
 
-    - name: Log coverage percentage
-      id: log-coverage
-      if: ${{ inputs.run-jacoco && steps.jacoco.outcome == 'success' }}
+    - name: 'Generate build summary and outputs'
+      id: summary
       shell: bash
+      env:
+        JDK_VERSION: ${{ inputs.jdk-version }}
+        MVN_VERSION: ${{ inputs.mvn-version }}
+        MAKE_TARGETS: ${{ inputs.make-targets }}
+        RUN_JACOCO: ${{ inputs.run-jacoco }}
+        JACOCO_COVERAGE: ${{ steps.jacoco.outputs.coverage }}
+        JACOCO_BRANCHES: ${{ steps.jacoco.outputs.branches }}
+        ARTIFACT_UPLOAD: ${{ inputs.artifact-upload }}
+        ARTIFACT_NAME_INPUT: ${{ inputs.artifact-name }}
+        JOB_NAME: ${{ github.job }}
       run: |
-        echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
-        echo "branch coverage = ${{ steps.jacoco.outputs.branches }}"
+        # Summarise the build and publish action outputs
+        set -euo pipefail
+
+        # Sanitise a value for embedding in the Markdown summary table:
+        # strip CR/LF (which would break table rows or inject extra lines)
+        # and escape pipe characters (which would create spurious columns).
+        md_cell() {
+          printf '%s' "$1" | tr -d '\r\n' | sed 's/|/\\|/g'
+        }
+
+        ARTIFACT_NAME=""
+        if [ "$ARTIFACT_UPLOAD" = "true" ]; then
+          # Strip CR/LF from the user-provided name first, so a value made
+          # up only of CR/LF cannot slip past the non-empty check and yield
+          # an empty upload-artifact name or inject extra output lines.
+          SANITIZED_NAME=$(printf '%s' "$ARTIFACT_NAME_INPUT" | tr -d '\r\n')
+          if [ -n "$SANITIZED_NAME" ]; then
+            ARTIFACT_NAME="$SANITIZED_NAME"
+          else
+            ARTIFACT_NAME="maven-make-${JOB_NAME}"
+          fi
+        fi
+        # JaCoCo coverage values come from generated report files; strip
+        # CR/LF so they cannot inject extra GITHUB_OUTPUT lines.
+        COVERAGE=$(printf '%s' "$JACOCO_COVERAGE" | tr -d '\r\n')
+        BRANCH_COVERAGE=$(printf '%s' "$JACOCO_BRANCHES" | tr -d '\r\n')
+
+        {
+          echo "coverage=${COVERAGE}"
+          echo "branch_coverage=${BRANCH_COVERAGE}"
+          echo "artifact_name=${ARTIFACT_NAME}"
+        } >> "$GITHUB_OUTPUT"
+
+        {
+          echo "## ☕️ Maven Build (Make) ✅"
+          echo ""
+          echo "| Key | Value |"
+          echo "|-----|-------|"
+          echo "| JDK version | $(md_cell "$JDK_VERSION") |"
+          echo "| Maven version | $(md_cell "$MVN_VERSION") |"
+          echo "| Make targets | $(md_cell "$MAKE_TARGETS") |"
+          if [ "$RUN_JACOCO" = "true" ] && [ -n "$COVERAGE" ]; then
+            echo "| Line coverage | ${COVERAGE}% |"
+            echo "| Branch coverage | ${BRANCH_COVERAGE}% |"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        echo "Line coverage: ${COVERAGE:-n/a}"
+        echo "Branch coverage: ${BRANCH_COVERAGE:-n/a}"
+
+    - name: 'Upload build artifacts'
+      if: ${{ inputs.artifact-upload == 'true' }}
+      # yamllint disable-line rule:line-length
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ steps.summary.outputs.artifact_name }}
+        path: badges/
+        if-no-files-found: ignore
+        retention-days: 7
