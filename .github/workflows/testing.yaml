@@ -28,11 +28,6 @@ jobs:
       contents: read
     timeout-minutes: 25 # Increase this timeout value as needed
     steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - name: 'Checkout sample O-RAN-SC repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,7 +37,7 @@ jobs:
           path: 'oam-oam-controller'
 
       - name: "Running local action: ${{ github.repository }}"
-        uses: ./
+        uses: $/
         with:
           java-version: '21'
           mvn-version: '3.9.5'
