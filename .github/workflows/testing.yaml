@@ -41,7 +41,13 @@ jobs:
         with:
           java-version: '21'
           mvn-version: '3.9.5'
-          make-targets: 'build'
+          # Not 'build': its features-odlux step cannot resolve. Since the
+          # project's commit 21c8ed6 ("Update parents") it builds oparent
+          # 14.0.1-SNAPSHOT, while features/sdnr/odlux/odlux/pom.xml still
+          # names 14.0.0-SNAPSHOT, which no repository publishes. Only a
+          # warm ~/.m2 cache from before that commit hid it. Return to
+          # 'build' once the project fixes that parent reference.
+          make-targets: 'parents features-wt'
           path_prefix: 'oam-oam-controller'
 
       # The build must run on the JDK and Maven the inputs ask for.
