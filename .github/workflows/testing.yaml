@@ -77,3 +77,7 @@ jobs:
             echo "::error::Maven does not run on the requested Java 21"
             exit 1
           fi
+          if ! grep -q '<id>github</id>' "${HOME}/.m2/settings.xml"; then
+            echo "::error::~/.m2/settings.xml lacks the github server"
+            exit 1
+          fi

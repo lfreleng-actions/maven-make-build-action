@@ -117,18 +117,46 @@ runs:
         java-version: ${{ steps.java.outputs.version }}
         distribution: ${{ inputs.distribution }}
 
-    # Maven and its dependency cache directly, not s4u/setup-maven-action:
-    # that action runs actions/setup-java again with its own default
-    # distribution (zulu), so builds ran on Zulu whatever 'distribution'
-    # asked for. Its checkout was disabled and its settings.xml repeated
-    # the one actions/setup-java writes; the cache below is the part of
-    # it that earned its place, under the same path and key shape.
+    # Maven, its settings and its dependency cache directly, not through
+    # s4u/setup-maven-action: that action runs actions/setup-java again
+    # with its own default distribution (zulu), so builds ran on Zulu
+    # whatever 'distribution' asked for. The steps below keep the rest of
+    # what it did: download Maven only when the one on PATH is not the
+    # version asked for, write ~/.m2/settings.xml through
+    # s4u/maven-settings-action, whose post-job cleanup removes the file
+    # again so a persistent runner keeps nothing, and cache
+    # ~/.m2/repository under the same path and key shape.
+    - name: Check installed Maven
+      id: maven-installed
+      shell: bash
+      run: |
+        # Report the Maven version on PATH, empty when there is none
+        # pipefail, declared rather than left to the runner's shell
+        # template: without it a failing mvn that prints the version would
+        # pass for a usable one, and the setup step below would be skipped.
+        set -euo pipefail
+        version=""
+        if command -v mvn >/dev/null 2>&1; then
+          # One bare version line, as 'mvn -q -v' prints; anything else
+          # cannot match the input, and the download below goes ahead.
+          version=$(mvn -q -v 2>/dev/null | tr -d '\r\n') || version=""
+        fi
+        echo "Installed Maven: ${version:-none}"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+
     - name: Setup Maven
       id: setup-maven
+      if: ${{ steps.maven-installed.outputs.version != inputs.mvn-version }}
       # yamllint disable-line rule:line-length
       uses: stCarolas/setup-maven@12eb41b233df95d49b0c11fc1b5bc8312e5d4ce0 # v5.1
       with:
         maven-version: ${{ inputs.mvn-version }}
+
+    - name: Write Maven settings
+      # yamllint disable-line rule:line-length
+      uses: s4u/maven-settings-action@894661b3ddae382f1ae8edbeab60987e08cf0788 # v4.0.0
+      with:
+        githubServer: 'true'
 
     - name: Cache Maven dependencies
       # yamllint disable-line rule:line-length
