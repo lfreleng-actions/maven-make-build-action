@@ -91,7 +91,8 @@ The action performs the following steps:
 1. **Environment Setup**: Validates the project directory path
 2. **JDK Setup**: Installs the specified OpenJDK version using the specified
    distribution (defaults to Temurin)
-3. **Maven Setup**: Installs the specified Maven version
+3. **Maven Setup**: Installs the specified Maven version, and restores and
+   saves the `~/.m2/repository` dependency cache
 4. **Environment Variables**: Exports custom GitHub variables as environment
    variables
 5. **Environment Secrets**: Exports custom GitHub secrets as environment

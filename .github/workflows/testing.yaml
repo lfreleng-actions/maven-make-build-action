@@ -41,5 +41,39 @@ jobs:
         with:
           java-version: '21'
           mvn-version: '3.9.5'
-          make-targets: 'build'
+          # Not 'build': its features-odlux step cannot resolve. Since the
+          # project's commit 21c8ed6 ("Update parents") it builds oparent
+          # 14.0.1-SNAPSHOT, while features/sdnr/odlux/odlux/pom.xml still
+          # names 14.0.0-SNAPSHOT, which no repository publishes. Only a
+          # warm ~/.m2 cache from before that commit hid it. Return to
+          # 'build' once the project fixes that parent reference.
+          make-targets: 'parents features-wt'
           path_prefix: 'oam-oam-controller'
+
+      # The build must run on the JDK and Maven the inputs ask for.
+      # Until s4u/setup-maven-action was dropped it installed a second
+      # JDK, its own default Zulu, after the requested Temurin one, so
+      # JAVA_HOME pointed at Zulu whatever 'distribution' said.
+      - name: 'Verify the requested toolchain'
+        shell: bash
+        run: |
+          # Verify the requested toolchain
+          set -euo pipefail
+          echo "JAVA_HOME=${JAVA_HOME}"
+          case "${JAVA_HOME}" in
+            *Temurin*) ;;
+            *)
+              echo "::error::JAVA_HOME is not the default Temurin JDK"
+              exit 1
+              ;;
+          esac
+          mvn_version=$(mvn --version)
+          echo "${mvn_version}"
+          if ! grep -q '^Apache Maven 3\.9\.5 ' <<< "${mvn_version}"; then
+            echo "::error::mvn is not the requested Maven 3.9.5"
+            exit 1
+          fi
+          if ! grep -q '^Java version: 21\.' <<< "${mvn_version}"; then
+            echo "::error::Maven does not run on the requested Java 21"
+            exit 1
+          fi
