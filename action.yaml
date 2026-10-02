@@ -117,14 +117,28 @@ runs:
         java-version: ${{ steps.java.outputs.version }}
         distribution: ${{ inputs.distribution }}
 
+    # Maven and its dependency cache directly, not s4u/setup-maven-action:
+    # that action runs actions/setup-java again with its own default
+    # distribution (zulu), so builds ran on Zulu whatever 'distribution'
+    # asked for. Its checkout was disabled and its settings.xml repeated
+    # the one actions/setup-java writes; the cache below is the part of
+    # it that earned its place, under the same path and key shape.
     - name: Setup Maven
       id: setup-maven
       # yamllint disable-line rule:line-length
-      uses: s4u/setup-maven-action@4a02cbd99769e46198135c31d5097c94618ba3f5 # v1.21.0
+      uses: stCarolas/setup-maven@12eb41b233df95d49b0c11fc1b5bc8312e5d4ce0 # v5.1
       with:
-        java-version: ${{ steps.java.outputs.version }}
         maven-version: ${{ inputs.mvn-version }}
-        checkout-enabled: false
+
+    - name: Cache Maven dependencies
+      # yamllint disable-line rule:line-length
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/repository
+        # yamllint disable rule:line-length
+        key: ${{ runner.os }}-jdk${{ steps.java.outputs.version }}-${{ inputs.distribution }}-maven${{ inputs.mvn-version }}-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-jdk${{ steps.java.outputs.version }}-${{ inputs.distribution }}-maven${{ inputs.mvn-version }}-
+        # yamllint enable rule:line-length
 
     - name: Export env variables
       id: export-env-variables
