@@ -51,6 +51,9 @@ docs/_build/*
 cover/*
 MANIFEST
 
+# Maven output, from building the test fixtures
+target/
+
 # Per-project virtualenvs
 .venv*/
 .conda*/

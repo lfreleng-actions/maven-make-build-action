@@ -81,3 +81,94 @@ jobs:
             echo "::error::~/.m2/settings.xml lacks the github server"
             exit 1
           fi
+
+  # The Maven releases and Java versions the Java/Maven estate tests
+  # against, published by java-workflows for every repository in it.
+  versions:
+    name: 'Java/Maven versions'
+    permissions: {}
+    # yamllint disable-line rule:line-length
+    uses: lfreleng-actions/java-workflows/.github/workflows/java-maven-versions.yaml@c0a33e2ec6357244055df8b32aaf78d94e2b9514  # main
+
+  # The action on every Maven release and JDK under test, building a
+  # fixture this repository owns: a failing cell then points at the
+  # action or the toolchain, not at a change in an external project.
+  compatibility:
+    # yamllint disable-line rule:line-length
+    name: 'Compatibility (Maven ${{ matrix.maven.line }}, JDK ${{ matrix.java }})'
+    needs: versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        maven: ${{ fromJSON(needs.versions.outputs.maven) }}
+        java: ${{ fromJSON(needs.versions.outputs.java) }}
+    steps:
+      - name: 'Harden runner'
+        # yamllint disable-line rule:line-length
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: "Running local action: ${{ github.repository }}"
+        uses: $/
+        with:
+          path_prefix: 'tests/fixtures/make-project'
+          java-version: ${{ matrix.java }}
+          mvn-version: ${{ matrix.maven.version }}
+          make-targets: 'all'
+          run-jacoco: 'false'
+          # The default artifact name, maven-make-<job>, is the same in
+          # every cell, so uploads from the matrix would collide.
+          artifact-upload: 'false'
+
+      - name: 'Check the toolchain under test'
+        shell: bash
+        env:
+          WANT_MAVEN: ${{ matrix.maven.version }}
+          WANT_JAVA: ${{ matrix.java }}
+        run: |
+          set -euo pipefail
+          version="$(mvn --version)"
+          echo "${version}"
+          status=0
+          if ! grep -qF "Apache Maven ${WANT_MAVEN} (" <<< "${version}"; then
+            echo "::error::mvn is not Maven ${WANT_MAVEN}"
+            status=1
+          fi
+          if ! grep -qE "^Java version: ${WANT_JAVA}[.,]" <<< "${version}"; then
+            echo "::error::Maven does not run on JDK ${WANT_JAVA}"
+            status=1
+          fi
+          case "${JAVA_HOME:-}" in
+            *Temurin*) ;;
+            *) echo "::error::JAVA_HOME is not a Temurin JDK"; status=1 ;;
+          esac
+          exit "${status}"
+
+      - name: 'Check the Maven settings'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! grep -q '<id>github</id>' "${HOME}/.m2/settings.xml"; then
+            echo "::error::~/.m2/settings.xml lacks the github server"
+            exit 1
+          fi
+
+      # The toolchain on PATH after the action proves what was
+      # installed; the jar manifests and Surefire reports prove what
+      # the build itself ran on.
+      - name: 'Check the build ran on that toolchain'
+        shell: bash
+        env:
+          WANT_JAVA: ${{ matrix.java }}
+        run: |
+          bash tests/check-build.sh tests/fixtures/make-project "${WANT_JAVA}"

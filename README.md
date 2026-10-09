@@ -164,6 +164,30 @@ with:
   make-targets: "clean compile test package"
 ```
 
+## Testing
+
+The `testing.yaml` workflow runs the action in two ways:
+
+- **Live project**: builds `o-ran-sc/oam-oam-controller` with Java 21 and
+  Maven 3.9.5. That project can change at any time, so a failure here does
+  not always point at this action.
+- **Compatibility**: builds `tests/fixtures/make-project`, a two-module Maven
+  reactor with a `Makefile` that this repository owns, using `make all` on
+  every Maven release and JDK the Java/Maven actions test against. The
+  `java-maven-versions.yaml` reusable workflow in
+  [java-workflows](https://github.com/lfreleng-actions/java-workflows)
+  publishes that list. Each matrix cell checks the `mvn` and Temurin JDK on
+  `PATH`, then runs `tests/check-build.sh`, which requires the jar manifests
+  and Surefire reports to record the JDK under test.
+
+To run the compatibility check locally with the JDK on `PATH`:
+
+```bash
+cd tests/fixtures/make-project
+make all
+bash ../../check-build.sh . 21  # the feature version of that JDK
+```
+
 ## Notes
 
 - The action uses SHA-pinned versions of all external actions for security
