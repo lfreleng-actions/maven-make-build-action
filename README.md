@@ -96,9 +96,11 @@ The action performs the following steps:
    server for GitHub Packages, removed again when the job ends; and restores
    and saves the `~/.m2/repository` dependency cache
 4. **Environment Variables**: Exports custom GitHub variables as environment
-   variables
+   variables using `lfreleng-actions/vars-to-env-action`; skipped when
+   `env-vars` holds `{}`
 5. **Environment Secrets**: Exports custom GitHub secrets as environment
-   variables
+   variables using `lfreleng-actions/vars-to-env-action`; skipped when
+   `env-secrets` holds `{}`
 6. **Build Execution**: Changes to the project directory and runs the
    specified Make targets
 7. **Coverage Analysis**: Generates JaCoCo coverage badges and reports
@@ -172,3 +174,7 @@ with:
   setup actions
 - All environment variables and secrets have proper masking in logs for
   security
+- Steps 4 and 5 need `bash` and Python 3.9 or newer on `PATH`, as `python3`
+  or `python`, whenever `env-vars` or `env-secrets` holds variables to
+  export. GitHub-hosted runners provide both; on a self-hosted runner,
+  install them before calling this action
