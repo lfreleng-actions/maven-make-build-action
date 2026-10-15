@@ -172,3 +172,42 @@ jobs:
           WANT_JAVA: ${{ matrix.java }}
         run: |
           bash tests/check-build.sh tests/fixtures/make-project "${WANT_JAVA}"
+
+  # A caller who leaves mvn-version unset must get the action's default
+  # Maven, not whichever release the runner image happens to ship.
+  default-maven:
+    name: 'Default Maven version'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - name: 'Harden runner'
+        # yamllint disable-line rule:line-length
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: "Running local action: ${{ github.repository }}"
+        uses: $/
+        with:
+          path_prefix: 'tests/fixtures/make-project'
+          make-targets: 'all'
+          run-jacoco: 'false'
+          artifact-upload: 'false'
+
+      - name: 'Check the default Maven version'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(mvn --version)"
+          echo "${version}"
+          if ! grep -qF 'Apache Maven 3.9.16 (' <<< "${version}"; then
+            echo "::error::mvn is not the default Maven 3.9.16"
+            exit 1
+          fi
