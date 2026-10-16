@@ -26,7 +26,7 @@ steps:
     with:
       java-version: "17"
       distribution: "temurin"
-      mvn-version: "3.8.2"
+      mvn-version: "3.9.16"
       make-targets: "clean compile test"
       run-jacoco: "true"
 ```
@@ -44,7 +44,7 @@ steps:
 | java-version    | False    | "17"      | OpenJDK version to set up             |
 | jdk-version     | False    | ""        | Deprecated alias for java-version     |
 | distribution    | False    | "temurin" | OpenJDK distribution                  |
-| mvn-version     | False    | "3.8.2"   | Maven version to set up               |
+| mvn-version     | False    | "3.9.16"  | Maven version to set up               |
 | make-targets    | False    | "all"     | Targets for the make command (e.g.,   |
 |                 |          |           | "clean compile test")                 |
 | env-vars        | False    | "{}"      | Pass GitHub variables as environment  |
