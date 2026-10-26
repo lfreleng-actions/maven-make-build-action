@@ -88,7 +88,7 @@ jobs:
     name: 'Java/Maven versions'
     permissions: {}
     # yamllint disable-line rule:line-length
-    uses: lfreleng-actions/java-workflows/.github/workflows/java-maven-versions.yaml@14360dec210f11d0c94838fdfcc668ad67826eb4  # v0.6.0
+    uses: lfreleng-actions/java-workflows/.github/workflows/java-maven-versions.yaml@7bb1071df52ffc3fb4c2280511fe257041e259d8  # v0.7.0
 
   # The action on every Maven release and JDK under test, building a
   # fixture this repository owns: a failing cell then points at the
