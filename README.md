@@ -168,7 +168,7 @@ with:
 
 ## Testing
 
-The `testing.yaml` workflow runs the action in two ways:
+The `testing.yaml` workflow runs the action in these ways:
 
 - **Live project**: builds `o-ran-sc/oam-oam-controller` with Java 21 and
   Maven 3.9.5. That project can change at any time, so a failure here does
@@ -181,6 +181,12 @@ The `testing.yaml` workflow runs the action in two ways:
   publishes that list. Each matrix cell checks the `mvn` and Temurin JDK on
   `PATH`, then runs `tests/check-build.sh`, which requires the jar manifests
   and Surefire reports to record the JDK under test.
+- **Default Maven**: builds the same fixture with `mvn-version` unset and
+  checks that the action's default Maven ran.
+- **Environment export**: builds the same fixture with one variable in
+  `env-vars` and a secret generated for the run in `env-secrets`. The
+  fixture's `check-env` target fails the build unless `make` sees both, and
+  a later step checks both values in the job environment.
 
 To run the compatibility check locally with the JDK on `PATH`:
 
