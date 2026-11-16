@@ -172,7 +172,7 @@ runs:
       id: export-env-variables
       if: ${{ inputs.env-vars != '{}' }}
       # yamllint disable-line rule:line-length
-      uses: lfreleng-actions/vars-to-env-action@3e370dd1d3ca48e972458510f38b52732c0c63d8 # v0.0.2
+      uses: lfreleng-actions/vars-to-env-action@963c7fcc2a9054f325f43a60ac898b05a99ce5f5 # v1.0.0
       with:
         secrets: ${{ inputs.env-vars }}
 
@@ -180,7 +180,7 @@ runs:
       id: export-env-secrets
       if: ${{ inputs.env-secrets != '{}' }}
       # yamllint disable-line rule:line-length
-      uses: lfreleng-actions/vars-to-env-action@3e370dd1d3ca48e972458510f38b52732c0c63d8 # v0.0.2
+      uses: lfreleng-actions/vars-to-env-action@963c7fcc2a9054f325f43a60ac898b05a99ce5f5 # v1.0.0
       with:
         secrets: ${{ inputs.env-secrets }}
 
