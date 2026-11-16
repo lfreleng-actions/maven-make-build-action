@@ -211,3 +211,67 @@ jobs:
             echo "::error::mvn is not the default Maven 3.9.16"
             exit 1
           fi
+
+  # env-vars and env-secrets reach later steps only through the two
+  # vars-to-env-action steps; every other job leaves both at '{}', which
+  # skips them. Each value must arrive in the job environment and in the
+  # environment make runs in, so removing either export step fails here.
+  env-export:
+    name: 'Export env-vars and env-secrets'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - name: 'Harden runner'
+        # yamllint disable-line rule:line-length
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A throwaway value made for this run, so no credential-shaped
+      # literal lives in the repository.
+      - name: 'Generate a throwaway secret'
+        id: secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          value="$(openssl rand -hex 16)"
+          echo "::add-mask::${value}"
+          printf 'value=%s\n' "${value}" >> "${GITHUB_OUTPUT}"
+          printf 'json={"FIXTURE_ENV_SECRET":"%s"}\n' "${value}" \
+            >> "${GITHUB_OUTPUT}"
+
+      - name: "Running local action: ${{ github.repository }}"
+        uses: $/
+        with:
+          path_prefix: 'tests/fixtures/make-project'
+          # check-env fails the build unless make sees both variables.
+          # yamllint disable-line rule:line-length
+          make-targets: 'check-env all REQUIRED_ENV=FIXTURE_ENV_VAR,FIXTURE_ENV_SECRET'
+          run-jacoco: 'false'
+          artifact-upload: 'false'
+          env-vars: '{"FIXTURE_ENV_VAR":"fixture-var-value"}'
+          env-secrets: ${{ steps.secret.outputs.json }}
+
+      - name: 'Check the exported variables'
+        shell: bash
+        env:
+          WANT_SECRET: ${{ steps.secret.outputs.value }}
+        run: |
+          set -euo pipefail
+          status=0
+          if [ "${FIXTURE_ENV_VAR:-}" != 'fixture-var-value' ]; then
+            echo "::error::env-vars did not export FIXTURE_ENV_VAR"
+            status=1
+          fi
+          if [ "${FIXTURE_ENV_SECRET:-}" != "${WANT_SECRET}" ]; then
+            echo "::error::env-secrets did not export FIXTURE_ENV_SECRET"
+            status=1
+          fi
+          exit "${status}"
