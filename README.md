@@ -198,7 +198,7 @@ bash ../../check-build.sh . 21  # the feature version of that JDK
   setup actions
 - All environment variables and secrets have proper masking in logs for
   security
-- Steps 4 and 5 need `bash` and Python 3.9 or newer on `PATH`, as `python3`
+- Steps 4 and 5 need `bash` and Python 3.10 or newer on `PATH`, as `python3`
   or `python`, whenever `env-vars` or `env-secrets` holds variables to
   export. GitHub-hosted runners provide both; on a self-hosted runner,
   install them before calling this action
